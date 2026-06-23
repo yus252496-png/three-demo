@@ -23,6 +23,8 @@ const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerH
 // 把相机向后移动 5 个单位（沿 Z 轴负方向后退）
 // 这样相机在原点前方，能看到原点处的物体
 camera.position.z = 5;
+// 把相机向后移动 5 个单位（沿 Z 轴负方向后退）
+camera.position.set(3, 3, 5);
 
 // ============================================
 // 3. 创建 WebGL 渲染器 Renderer（负责把 3D 场景绘制到屏幕上）
