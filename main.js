@@ -239,10 +239,18 @@ function animate() {
         }
     }
 
-    // 蝙蝠侠原地弹跳动画
+    // 蝙蝠侠弹跳动画（无骨骼，用挤压拉伸模拟弹性）
     if (skinModel) {
-        const t = performance.now() / 300; // 速度
-        skinModel.position.y = Math.abs(Math.sin(t)) * 0.8; // 0 ~ 0.8 跳跃
+        const t = performance.now() / 350;
+        const phase = (Math.sin(t) + 1) / 2; // 0→1→0，平滑
+
+        // ① 高度：落地 0 → 最高 0.9
+        skinModel.position.y = phase * 0.9;
+
+        // ② 挤压拉伸：落地时压扁撑宽，腾空时拉长收窄
+        const sx = 0.5 * (1 - phase * 0.08); // 落地宽，腾空窄
+        const sy = 0.5 * (1 + phase * 0.18); // 落地扁，腾空长
+        skinModel.scale.set(sx, sy, sx);
     }
 
     // 7.3 渲染：把场景和相机交给渲染器，绘制到 canvas 上
