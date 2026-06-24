@@ -129,13 +129,21 @@ loader.load(
     }
 );
 loader.load(
-    './models/skin.glb',
+    'https://threejs.org/examples/models/gltf/Soldier.glb',
     (gltf) => {
         const model = gltf.scene;
         skinModel = model;
-        model.scale.set(0.5, 0.5, 0.5);    // 调整大小
-        model.position.set(-1, 0, 0);  // 调整位置
+        model.scale.set(0.5, 0.5, 0.5);
+        model.position.set(-1, 0, 0);
         scene.add(model);
+
+        // 骨骼动画
+        const mixer = new THREE.AnimationMixer(model);
+        const clip = gltf.animations[0]; // 0=Idle, 1=Walking, 2=Running, 3=Jump
+        const action = mixer.clipAction(clip);
+        action.play();
+        window._mixer = mixer; // 挂到全局，给 animate 用
+
         updateProgress();
     },
     (xhr) => {
@@ -202,6 +210,8 @@ scene.add(ground);
 const gridHelper = new THREE.GridHelper(10, 20, 0x6666aa, 0x444466);
 scene.add(gridHelper);
 
+const clock = new THREE.Clock();
+
 // ============================================
 // 7. 动画循环（浏览器的 requestAnimationFrame 驱动）
 // 每一帧都会重新渲染场景，形成连续动画
@@ -239,19 +249,9 @@ function animate() {
         }
     }
 
-    // 蝙蝠侠弹跳动画（无骨骼，用挤压拉伸模拟弹性）
-    if (skinModel) {
-        const t = performance.now() / 350;
-        const phase = (Math.sin(t) + 1) / 2; // 0→1→0，平滑
-
-        // ① 高度：落地 0 → 最高 0.9
-        skinModel.position.y = phase * 0.9;
-
-        // ② 挤压拉伸：落地时压扁撑宽，腾空时拉长收窄
-        const sx = 0.5 * (1 - phase * 0.08); // 落地宽，腾空窄
-        const sy = 0.5 * (1 + phase * 0.18); // 落地扁，腾空长
-        skinModel.scale.set(sx, sy, sx);
-    }
+    // 骨骼动画更新（Soldier.glb）
+    const delta = clock.getDelta();
+    if (window._mixer) window._mixer.update(delta);
 
     // 7.3 渲染：把场景和相机交给渲染器，绘制到 canvas 上
     renderer.render(scene, camera);
