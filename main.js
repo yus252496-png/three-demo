@@ -4,7 +4,7 @@
 import * as THREE from 'three';
 // 导入轨道控制器（允许用户用鼠标拖拽/缩放来旋转视角）
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
-
+import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 // ============================================
 // 1. 创建场景 Scene（场景是所有物体的容器）
 // ============================================
@@ -44,32 +44,51 @@ const controls = new OrbitControls(camera, renderer.domElement);
 // 启用阻尼（物理惯性）效果——拖拽松开后视角会缓慢停下来，手感更顺滑
 controls.enableDamping = true;
 
-// ============================================
-// 4. 创建立方体（Box）
-// ============================================
-// 4.1 几何体 Geometry：定义形状——长宽高各为 1 的立方体
-const geometry = new THREE.BoxGeometry(1, 1, 1);
-// 4.2 材质 Material：定义外观——标准材质，颜色为亮蓝色 (0x00aaff)
-// MeshStandardMaterial 需要光照才能显示，否则为黑色
-const material = new THREE.MeshStandardMaterial({ color: 'green' });
-// 4.3 网格 Mesh = 几何体 + 材质，组合成一个可渲染的物体
-const cube = new THREE.Mesh(geometry, material);
-// 4.4 将立方体添加到场景中（不添加就不会显示）
-scene.add(cube);
+// // ============================================
+// // 4. 创建立方体（Box）
+// // ============================================
+// // 4.1 几何体 Geometry：定义形状——长宽高各为 1 的立方体
+// const geometry = new THREE.BoxGeometry(1, 1, 1);
+// // 4.2 材质 Material：定义外观——标准材质，颜色为亮蓝色 (0x00aaff)
+// // MeshStandardMaterial 需要光照才能显示，否则为黑色
+// const material = new THREE.MeshStandardMaterial({ color: 'green' });
+// // 4.3 网格 Mesh = 几何体 + 材质，组合成一个可渲染的物体
+// const cube = new THREE.Mesh(geometry, material);
+// // 4.4 将立方体添加到场景中（不添加就不会显示）
+// scene.add(cube);
 
-// ============================================
-// 4.1 创建一个球体（Sphere）
-// ============================================
-// 4.1.1 球体几何体：半径 0.8，水平分段 32，垂直分段 32（分段越高越光滑）
-const sphereGeometry = new THREE.SphereGeometry(0.8, 32, 32);
-// 4.1.2 球体材质：橙色 (0xff5500)，金属感 0.3，粗糙度 0.4（介于光滑和粗糙之间）
-const sphereMaterial = new THREE.MeshStandardMaterial({ color: 'red', metalness: 0.3, roughness: 0.4 });
-// 4.1.3 创建球体网格
-const sphere = new THREE.Mesh(sphereGeometry, sphereMaterial);
-// 4.1.4 把球体沿 X 轴向右移动 2.5 个单位，让它和立方体分开
-sphere.position.x = 2.5;
-// 4.1.5 将球体添加到场景中
-scene.add(sphere);
+// // ============================================
+// // 4.1 创建一个球体（Sphere）
+// // ============================================
+// // 4.1.1 球体几何体：半径 0.8，水平分段 32，垂直分段 32（分段越高越光滑）
+// const sphereGeometry = new THREE.SphereGeometry(0.8, 32, 32);
+// // 4.1.2 球体材质：橙色 (0xff5500)，金属感 0.3，粗糙度 0.4（介于光滑和粗糙之间）
+// const sphereMaterial = new THREE.MeshStandardMaterial({ color: 'red', metalness: 0.3, roughness: 0.4 });
+// // 4.1.3 创建球体网格
+// const sphere = new THREE.Mesh(sphereGeometry, sphereMaterial);
+// // 4.1.4 把球体沿 X 轴向右移动 2.5 个单位，让它和立方体分开
+// sphere.position.x = 2.5;
+// // 4.1.5 将球体添加到场景中
+// scene.add(sphere);
+
+// 在场景、相机、渲染器、光照、轨道控制后面加：
+// 加载外部模型
+const loader = new GLTFLoader();
+loader.load(
+  './models/car.glb',  // 替换成实际路径
+  (gltf) => {
+    const model = gltf.scene;
+    model.scale.set(1, 1, 1);    // 调整大小
+    model.position.set(0, 0, 0);  // 调整位置
+    scene.add(model);
+  },
+  (xhr) => {
+    console.log(`加载进度: ${(xhr.loaded / xhr.total * 100).toFixed(2)}%`);
+  },
+  (error) => {
+    console.error('模型加载失败:', error);
+  }
+);
 
 // ============================================
 // 5. 添加光照（重要！ MeshStandardMaterial 需要光照才能显示颜色）
