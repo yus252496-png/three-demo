@@ -139,7 +139,7 @@ loader.load(
 
         // 骨骼动画
         const mixer = new THREE.AnimationMixer(model);
-        const clip = gltf.animations[0]; // 0=Idle, 1=Walking, 2=Running, 3=Jump
+        const clip = gltf.animations[3]; // 0=Idle, 1=Walking, 2=Running, 3=Jump
         const action = mixer.clipAction(clip);
         action.play();
         window._mixer = mixer; // 挂到全局，给 animate 用
