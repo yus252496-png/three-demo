@@ -11,7 +11,7 @@ import { createAABBAvoidance } from './pathfinder.js';
 // ============================================
 const scene = new THREE.Scene();
 // 设置场景的背景色为深红色（RGB: 0xaa1a2e）
-scene.background = new THREE.Color(0xaa1a2e);
+scene.background = new THREE.Color(0xeeeeee);
 
 // ============================================
 // 2. 创建透视相机 Camera（模拟人眼透视效果）
@@ -79,7 +79,7 @@ let queenModel = null;
 const queenTarget = { x: 1, z: 0 };
 let carModel = null;
 const obstacles = [];
-const pf = createAABBAvoidance(obstacles, { safetyMargin: 1.5, detourMargin: 1.8 });
+const pf = createAABBAvoidance(obstacles, { safetyMargin: 0.6, detourMargin: 1.0 });
 loader.load(
     './models/car.glb',
     (gltf) => {
@@ -94,7 +94,7 @@ loader.load(
         setTimeout(() => {
             model.updateWorldMatrix(true, true);
             const tempBox = new THREE.Box3().setFromObject(model);
-            tempBox.expandByScalar(1.5);
+            tempBox.expandByScalar(0.6);
             const helper = new THREE.Box3Helper(tempBox, 0xff0000);
             scene.add(helper);
             console.log('🚗 汽车包围盒信息:', {
@@ -254,7 +254,7 @@ renderer.domElement.addEventListener('click', (event) => {
 
     // 规则 1：目标点在包围盒内部 → 不移动
     carModel.updateWorldMatrix(true, true);
-    const clickBox = new THREE.Box3().setFromObject(carModel).expandByScalar(1.5);
+    const clickBox = new THREE.Box3().setFromObject(carModel).expandByScalar(0.6);
     if (clickBox.containsPoint(new THREE.Vector3(endX, 0.5, endZ))) return;
 
     // 检测直线路径是否被障碍物挡住
