@@ -106,14 +106,18 @@ loader.load(
         // 可视化汽车的碰撞包围盒（调试用，理解碰撞区域）
         setTimeout(() => {
             model.updateWorldMatrix(true, true);
-            const tempBox = new THREE.Box3().setFromObject(model);
-            tempBox.expandByScalar(0.6);
-            const helper = new THREE.Box3Helper(tempBox, 0xff0000);
-            scene.add(helper);
-            console.log('🚗 汽车包围盒信息:', {
-                中心: tempBox.getCenter(new THREE.Vector3()).toArray(),
-                尺寸: tempBox.getSize(new THREE.Vector3()).toArray(),
-            });
+            const rawBox = new THREE.Box3().setFromObject(model);
+            const b = rawBox.clone().expandByScalar(0.6);
+            const pts = [
+                new THREE.Vector3(b.min.x, 0.02, b.min.z),
+                new THREE.Vector3(b.max.x, 0.02, b.min.z),
+                new THREE.Vector3(b.max.x, 0.02, b.max.z),
+                new THREE.Vector3(b.min.x, 0.02, b.max.z),
+                new THREE.Vector3(b.min.x, 0.02, b.min.z),
+            ];
+            const g = new THREE.BufferGeometry().setFromPoints(pts);
+            scene.add(new THREE.Line(g, new THREE.LineBasicMaterial({ color: 0xff0000 })));
+            console.log('🚗 碰撞区域:', b);
         }, 500); // 延迟等模型完全加载后计算
     },
     (xhr) => {
