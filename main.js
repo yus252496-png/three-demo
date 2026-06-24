@@ -75,6 +75,18 @@ controls.zoomToCursor = true;
 // 在场景、相机、渲染器、光照、轨道控制后面加：
 // 加载外部模型
 const loader = new GLTFLoader();
+const TOTAL_MODELS = 3;
+let modelsLoaded = 0;
+
+function updateProgress() {
+    modelsLoaded++;
+    const pct = Math.round((modelsLoaded / TOTAL_MODELS) * 100);
+    document.getElementById('progress-fill').style.width = pct + '%';
+    document.getElementById('progress-text').textContent = pct + '%';
+    if (modelsLoaded >= TOTAL_MODELS) {
+        setTimeout(() => document.getElementById('loading').classList.add('hidden'), 400);
+    }
+}
 let queenModel = null;
 const queenTarget = { x: 1, z: 0 };
 let carModel = null;
@@ -89,6 +101,7 @@ loader.load(
         model.scale.set(0.5, 0.5, 0.5);
         model.position.set(0, 0, 0);
         scene.add(model);
+        updateProgress();
 
         // 可视化汽车的碰撞包围盒（调试用，理解碰撞区域）
         setTimeout(() => {
@@ -117,6 +130,7 @@ loader.load(
         model.scale.set(0.5, 0.5, 0.5);    // 调整大小
         model.position.set(-1, 0, 0);  // 调整位置
         scene.add(model);
+        updateProgress();
     },
     (xhr) => {
         console.log(`加载进度: ${(xhr.loaded / xhr.total * 100).toFixed(2)}%`);
@@ -135,6 +149,7 @@ loader.load(
         model.scale.set(0.4, 0.4, 0.4);    // 调整大小
         model.position.set(3, 0, 0);  // 调整位置
         scene.add(model);
+        updateProgress();
     },
     (xhr) => {
         console.log(`加载进度: ${(xhr.loaded / xhr.total * 100).toFixed(2)}%`);
@@ -166,7 +181,19 @@ scene.add(directionalLight);
 // 参数3: 中心线颜色 黄色 0xffff00
 // 参数4: 网格线颜色 深灰 0x444444
 // ============================================
-const gridHelper = new THREE.GridHelper(10, 20, 0xffff00, 0xaaaaaa);
+// 实体地面（不透明，放在网格下面）
+const groundGeo = new THREE.PlaneGeometry(10, 10);
+const groundMat = new THREE.MeshStandardMaterial({
+    color: 0x222233,
+    roughness: 0.8,
+    metalness: 0.1,
+});
+const ground = new THREE.Mesh(groundGeo, groundMat);
+ground.rotation.x = -Math.PI / 2;
+ground.position.y = -0.01;
+scene.add(ground);
+
+const gridHelper = new THREE.GridHelper(10, 20, 0x6666aa, 0x444466);
 scene.add(gridHelper);
 
 // ============================================
