@@ -88,11 +88,22 @@ function updateProgress() {
     }
 }
 let queenModel = null;
-const queenTarget = { x: 1, z: 0 };
 let carModel = null;
-let skinModel = null; // 弹跳动画用
 const obstacles = [];
 const pf = createAABBAvoidance(obstacles, { safetyMargin: 0.6, detourMargin: 1.0 });
+
+// ── 选中系统 ──
+let selectedModel = null;    // 当前选中的模型对象 (scene)
+let selectedType = '';       // 'queen' | 'soldier'
+const RUN_THRESHOLD = 4;     // 超过此距离用跑步
+
+// ── 士兵动画系统 ──
+const soldier = {
+    model: null,
+    mixer: null,
+    actions: {},       // { idle, walk, run }
+    currentAction: null,
+};
 loader.load(
     './models/car.glb',
     (gltf) => {
@@ -129,20 +140,22 @@ loader.load(
     }
 );
 loader.load(
-    'https://threejs.org/examples/models/gltf/Soldier.glb',
+    './models/Soldier.glb',
     (gltf) => {
         const model = gltf.scene;
-        skinModel = model;
-        model.scale.set(0.5, 0.5, 0.5);
-        model.position.set(-1, 0, 0);
+        soldier.model = model;
+        model.scale.set(0.5, 0.5, -0.5);
+        model.position.set(-1.5, 0, 0);
         scene.add(model);
 
-        // 骨骼动画
+        // 骨骼动画系统：0=Idle, 1=Walking, 2=Running, 3=Jump
         const mixer = new THREE.AnimationMixer(model);
-        const clip = gltf.animations[3]; // 0=Idle, 1=Walking, 2=Running, 3=Jump
-        const action = mixer.clipAction(clip);
-        action.play();
-        window._mixer = mixer; // 挂到全局，给 animate 用
+        soldier.mixer = mixer;
+        soldier.actions.idle = mixer.clipAction(gltf.animations[0]);
+        soldier.actions.walk = mixer.clipAction(gltf.animations[1]);
+        soldier.actions.run  = mixer.clipAction(gltf.animations[2]);
+        soldier.actions.idle.play();
+        soldier.currentAction = soldier.actions.idle;
 
         updateProgress();
     },
@@ -210,6 +223,14 @@ scene.add(ground);
 const gridHelper = new THREE.GridHelper(10, 20, 0x6666aa, 0x444466);
 scene.add(gridHelper);
 
+// 选中箭头（顶向下箭头，头顶上方 0.2 单位）
+const arrowMat = new THREE.MeshBasicMaterial({ color: 0x00ff88 });
+const selArrow = new THREE.Mesh(new THREE.ConeGeometry(0.12, 0.2, 8), arrowMat);
+selArrow.rotation.x = Math.PI; // 尖端朝下
+selArrow.position.y = 1.6;     // 人物头顶上方
+selArrow.visible = false;
+scene.add(selArrow);
+
 const clock = new THREE.Clock();
 
 // ============================================
@@ -231,27 +252,51 @@ function animate() {
     //     queenModel.position.z += (queenTarget.z - queenModel.position.z) * 0.1;
     // }
 
-    // 美女移动：按队列逐点行走
-    if (queenModel && moveQueue.length > 0) {
+    // 选中模型移动：按队列逐点行走
+    if (selectedModel && moveQueue.length > 0) {
         const target = moveQueue[0];
-        const dx = target.x - queenModel.position.x;
-        const dz = target.z - queenModel.position.z;
+        const dx = target.x - selectedModel.position.x;
+        const dz = target.z - selectedModel.position.z;
         const dist = Math.sqrt(dx * dx + dz * dz);
 
         if (dist < 0.1) {
-            // 到达当前目标点 → 移除它，去下一个
+            // 到达当前目标点 → 移除它
             moveQueue.shift();
+            // 如果走完了 → 切回 idle
+            if (moveQueue.length === 0 && selectedType === 'soldier') {
+                fadeAction(soldier, 'idle');
+            }
         } else {
-            // 以固定速度滑向目标
-            const speed = 0.05;
-            queenModel.position.x += dx * speed;
-            queenModel.position.z += dz * speed;
+            const speed = selectedType === 'soldier'
+                ? (dist > RUN_THRESHOLD ? 0.08 : 0.04)
+                : 0.05;
+            selectedModel.position.x += dx * speed;
+            selectedModel.position.z += dz * speed;
+
+            // 面向移动方向（平滑旋转）
+            const targetAngle = Math.atan2(dx, dz);
+            let angleDiff = targetAngle - selectedModel.rotation.y;
+            while (angleDiff > Math.PI) angleDiff -= Math.PI * 2;
+            while (angleDiff < -Math.PI) angleDiff += Math.PI * 2;
+            selectedModel.rotation.y += angleDiff * 0.12;
+
+            // 士兵根据距离切换走路/跑步
+            if (selectedType === 'soldier') {
+                const next = dist > RUN_THRESHOLD ? 'run' : 'walk';
+                fadeAction(soldier, next);
+            }
         }
     }
 
-    // 骨骼动画更新（Soldier.glb）
+    // 更新骨骼动画
     const delta = clock.getDelta();
-    if (window._mixer) window._mixer.update(delta);
+    if (soldier.mixer) soldier.mixer.update(delta);
+
+    // 选中箭头跟随
+    if (selArrow.visible && selectedModel) {
+        selArrow.position.x = selectedModel.position.x;
+        selArrow.position.z = selectedModel.position.z;
+    }
 
     // 7.3 渲染：把场景和相机交给渲染器，绘制到 canvas 上
     renderer.render(scene, camera);
@@ -261,17 +306,25 @@ function animate() {
 animate();
 
 // ============================================
-// 8. 点击地面 → 美女自动绕开障碍物走到目标
+// 8. 模型选中 + 地面移动
 // ============================================
+function fadeAction(soldierObj, name) {
+    const next = soldierObj.actions[name];
+    if (!next || soldierObj.currentAction === next) return;
+    if (soldierObj.currentAction) soldierObj.currentAction.fadeOut(0.2);
+    next.reset().fadeIn(0.2).play();
+    soldierObj.currentAction = next;
+}
+
 const raycaster = new THREE.Raycaster();
 const pointer = new THREE.Vector2();
 const groundPlane = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0);
 
-// 美女的移动队列：存多个目标点，逐个走过去
+// 移动队列
 let moveQueue = [];
-let pathLine = null; // 可视化路径
+let pathLine = null;
 
-// 绘制路径线（调试用，能清晰看到路径是否穿过包围盒）
+// 绘制路径线
 function drawPath(points, safe) {
     if (pathLine) { scene.remove(pathLine); pathLine.geometry.dispose(); pathLine.material.dispose(); pathLine = null; }
     if (!points || points.length < 2) return;
@@ -284,8 +337,7 @@ function drawPath(points, safe) {
     scene.add(pathLine);
 }
 
-// 点击与拖动区分：按住拖动控制视角 → 不移动美女
-// 轻点（无拖动）→ 美女移动到目标位置
+// 点击 vs 拖动
 let pointerDownPos = { x: 0, y: 0 };
 let pointerDownTime = 0;
 
@@ -296,51 +348,86 @@ renderer.domElement.addEventListener('pointerdown', (e) => {
 });
 
 renderer.domElement.addEventListener('pointerup', (e) => {
-    // 计算拖动距离和时间
     const dx = e.clientX - pointerDownPos.x;
     const dy = e.clientY - pointerDownPos.y;
     const dt = Date.now() - pointerDownTime;
-
-    // 鼠标移动超过 10px 或按住超过 300ms → 视为拖动，不触发移动
     if (Math.sqrt(dx * dx + dy * dy) > 10 || dt > 300) return;
 
-    // ── 是点击，不是拖动 ──
     pointer.x = (e.clientX / window.innerWidth) * 2 - 1;
     pointer.y = -(e.clientY / window.innerHeight) * 2 + 1;
-
     raycaster.setFromCamera(pointer, camera);
+
+    // ── ① 检测是否点击到可选中的模型 ──
+    const selectables = [];
+    if (queenModel) selectables.push(queenModel);
+    if (soldier.model) selectables.push(soldier.model);
+
+    const meshes = [];
+    for (const root of selectables) {
+        root.traverse((child) => { if (child.isMesh) meshes.push(child); });
+    }
+    const hits = raycaster.intersectObjects(meshes);
+    if (hits.length > 0) {
+        const clicked = hits[0].object;
+        // 沿 parent 链找到 gltf.scene 根节点
+        let root = clicked;
+        while (root.parent && root.parent !== scene) root = root.parent;
+        if (queenModel && root === queenModel) { doSelect(queenModel, 'queen'); return; }
+        if (soldier.model && root === soldier.model) { doSelect(soldier.model, 'soldier'); return; }
+        return;
+    }
+
+    // ── ② 没点中模型 → 检测是否点到地面（移动选中模型）──
+    if (!selectedModel || !carModel) return;
+
     const intersectPoint = new THREE.Vector3();
     raycaster.ray.intersectPlane(groundPlane, intersectPoint);
+    if (!intersectPoint) return;
 
-    if (!intersectPoint || !queenModel || !carModel) return;
-
-    const startX = queenModel.position.x;
-    const startZ = queenModel.position.z;
+    const startX = selectedModel.position.x;
+    const startZ = selectedModel.position.z;
     const endX = intersectPoint.x;
     const endZ = intersectPoint.z;
 
-    // 规则 1：目标点在包围盒内部 → 不移动
+    // 目标点在汽车包围盒内部 → 不移动
     carModel.updateWorldMatrix(true, true);
     const clickBox = new THREE.Box3().setFromObject(carModel).expandByScalar(0.6);
     if (clickBox.containsPoint(new THREE.Vector3(endX, 0.5, endZ))) return;
 
-    // 检测直线路径是否被障碍物挡住
     const blocked = pf.isPathBlocked(startX, startZ, endX, endZ);
 
     if (blocked) {
-        // 规则 3：路径经过包围盒 → 绕行（自动计算安全路径点序列）
         const waypoints = pf.computeWaypoints(startX, startZ, endX, endZ);
         moveQueue = [...waypoints, { x: endX, z: endZ }];
-
-        // 可视化：绘制完整路径
         const fullPath = [{ x: startX, z: startZ }, ...waypoints, { x: endX, z: endZ }];
         drawPath(fullPath, true);
     } else {
-        // 规则 2：直线路径不经过包围盒 → 直接走过去
         moveQueue = [{ x: endX, z: endZ }];
         drawPath([{ x: startX, z: startZ }, { x: endX, z: endZ }], true);
     }
 });
+
+function doSelect(model, type) {
+    if (selectedModel === model) return; // 已选中
+
+    // 如果上一个选中的是士兵且正在移动 → 切回 idle
+    const prevType = selectedType;
+    if (prevType === 'soldier') {
+        fadeAction(soldier, 'idle');
+    }
+
+    // 清除移动队列，让旧模型停下来
+    moveQueue = [];
+
+    selectedModel = model;
+    selectedType = type;
+    selArrow.visible = true;
+    selArrow.position.set(model.position.x, 1.6, model.position.z);
+
+    // 选中士兵时切 idle
+    if (type === 'soldier') fadeAction(soldier, 'idle');
+    console.log(`✅ 选中: ${type}`);
+}
 
 // ============================================
 // 9. 路径规划工具（已抽取为独立模块 pathfinder.js）
