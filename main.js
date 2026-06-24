@@ -42,8 +42,8 @@ controls.zoomToCursor = true;
 // ========== 模型加载 ==========
 // 创建 GLTF 加载器实例
 const loader = new GLTFLoader();
-// 总共有 3 个模型需要加载（汽车、士兵、女王）
-const TOTAL_MODELS = 3;
+// 总共有 4 个模型需要加载（汽车、蝙蝠侠、士兵、女王）
+const TOTAL_MODELS = 4;
 // 已加载完成的模型计数
 let modelsLoaded = 0;
 
@@ -148,6 +148,26 @@ loader.load(
         console.error('模型加载失败:', error);
     }
 );
+
+// 开始加载蝙蝠侠模型
+loader.load(
+    './models/skin.glb',
+    (gltf) => {
+        const model = gltf.scene;
+        // 缩小到 0.4 倍
+        model.scale.set(0.4, 0.4, 0.4);
+        // 放在 (3, 0, 0)
+        model.position.set(0, 0.7, 0);
+        scene.add(model);
+        updateProgress();
+    },
+    (xhr) => {
+        console.log(`加载进度: ${(xhr.loaded / xhr.total * 100).toFixed(2)}%`);
+    },
+    (error) => {
+        console.error('模型加载失败:', error);
+    }
+);
 // 开始加载士兵模型
 loader.load(
     './models/Soldier.glb',
@@ -193,7 +213,7 @@ loader.load(
         // 缩小到 0.4 倍
         model.scale.set(0.4, 0.4, 0.4);
         // 放在 (3, 0, 0)
-        model.position.set(3, 0, 0);
+        model.position.set(1.5, 0, 0);
         scene.add(model);
         updateProgress();
     },
