@@ -75,11 +75,11 @@ controls.zoomToCursor = true;
 // 加载外部模型
 const loader = new GLTFLoader();
 let queenModel = null;
+const queenTarget = { z: 0 }; 
 loader.load(
     './models/car.glb',
     (gltf) => {
         const model = gltf.scene;
-        queenModel = model;
         model.scale.set(0.5, 0.5, 0.5);    // 调整大小
         model.position.set(0, 0, 0);  // 调整位置
         scene.add(model);
@@ -95,6 +95,7 @@ loader.load(
     './models/queen.glb',
     (gltf) => {
         const model = gltf.scene;
+        queenModel = model;
         model.scale.set(0.5, 0.5, 0.5);    // 调整大小
         model.position.set(1, 0, 0);  // 调整位置
         scene.add(model);
@@ -146,10 +147,37 @@ function animate() {
 
     // 7.2 更新轨道控制器（必须每帧调用，阻尼效果才能生效）
     controls.update();
-
+    // 平滑移动：每次靠近目标位置的 10%，看起来就是由快到慢的滑动
+    if (queenModel) {
+      queenModel.position.z += (queenTarget.z - queenModel.position.z) * 0.1;
+    }
     // 7.3 渲染：把场景和相机交给渲染器，绘制到 canvas 上
     renderer.render(scene, camera);
 }
 
 // 7.4 启动动画循环
 animate();
+
+// ============================================
+// 8. 点击交互：点击美女，向前移动
+// ============================================
+const raycaster = new THREE.Raycaster();
+const pointer = new THREE.Vector2();
+
+renderer.domElement.addEventListener('click', (event) => {
+  const raycaster = new THREE.Raycaster();
+  const pointer = new THREE.Vector2();
+
+  pointer.x = (event.clientX / window.innerWidth) * 2 - 1;
+  pointer.y = -(event.clientY / window.innerHeight) * 2 + 1;
+
+  raycaster.setFromCamera(pointer, camera);
+
+  if (queenModel) {
+    const intersects = raycaster.intersectObjects(queenModel.children, true);
+    if (intersects.length > 0) {
+      queenTarget.z += 1;   // ← 只设目标，不直接改位置
+    }
+  }
+});
+
