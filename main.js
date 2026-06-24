@@ -19,7 +19,7 @@ scene.background = new THREE.Color(0xaa1a2e);
 // 参数3: 近裁面 0.1（距离相机 < 0.1 的物体不渲染）
 // 参数4: 远裁面 1000（距离相机 > 1000 的物体不渲染）
 // ============================================
-const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 100);
 // 把相机向后移动 5 个单位（沿 Z 轴负方向后退）
 camera.position.set(3, 3, 5);
 
@@ -51,7 +51,7 @@ controls.enableDamping = true;
 const geometry = new THREE.BoxGeometry(1, 1, 1);
 // 4.2 材质 Material：定义外观——标准材质，颜色为亮蓝色 (0x00aaff)
 // MeshStandardMaterial 需要光照才能显示，否则为黑色
-const material = new THREE.MeshStandardMaterial({ color: 0x00aaff });
+const material = new THREE.MeshStandardMaterial({ color: 'green' });
 // 4.3 网格 Mesh = 几何体 + 材质，组合成一个可渲染的物体
 const cube = new THREE.Mesh(geometry, material);
 // 4.4 将立方体添加到场景中（不添加就不会显示）
@@ -63,7 +63,7 @@ scene.add(cube);
 // 4.1.1 球体几何体：半径 0.8，水平分段 32，垂直分段 32（分段越高越光滑）
 const sphereGeometry = new THREE.SphereGeometry(0.8, 32, 32);
 // 4.1.2 球体材质：橙色 (0xff5500)，金属感 0.3，粗糙度 0.4（介于光滑和粗糙之间）
-const sphereMaterial = new THREE.MeshStandardMaterial({ color: 0xff5500, metalness: 0.3, roughness: 0.4 });
+const sphereMaterial = new THREE.MeshStandardMaterial({ color: 'red', metalness: 0.3, roughness: 0.4 });
 // 4.1.3 创建球体网格
 const sphere = new THREE.Mesh(sphereGeometry, sphereMaterial);
 // 4.1.4 把球体沿 X 轴向右移动 2.5 个单位，让它和立方体分开
@@ -77,7 +77,7 @@ scene.add(sphere);
 // ============================================
 // 5.1 环境光 AmbientLight：均匀照亮所有表面，没有方向
 // 颜色暗灰色 (0x404040)，防止背光面完全漆黑
-const ambientLight = new THREE.AmbientLight(0x404040);
+const ambientLight = new THREE.AmbientLight(0xffffff);
 scene.add(ambientLight);
 // 5.2 平行光 DirectionalLight：从一个方向照射，产生明暗对比
 // 颜色白色 (0xffffff)，强度 1（最大为 1）
@@ -90,10 +90,10 @@ scene.add(directionalLight);
 // 6. 添加辅助网格 GridHelper（帮助观察空间位置和方向）
 // 参数1: 网格大小 10（宽高各 10 个单位）
 // 参数2: 分割数 20（每条边分成 20 段 → 每个小格 0.5 单位）
-// 参数3: 中心线颜色 灰色 0x888888
+// 参数3: 中心线颜色 黄色 0xffff00
 // 参数4: 网格线颜色 深灰 0x444444
 // ============================================
-const gridHelper = new THREE.GridHelper(10, 20, 0x111111, 0xaaaaaa);
+const gridHelper = new THREE.GridHelper(10, 20, 0xffff00, 0xaaaaaa);
 scene.add(gridHelper);
 
 // ============================================
