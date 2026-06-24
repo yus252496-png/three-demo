@@ -5,6 +5,7 @@ import * as THREE from 'three';
 // 导入轨道控制器（允许用户用鼠标拖拽/缩放来旋转视角）
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+import { createAABBAvoidance } from './pathfinder.js';
 // ============================================
 // 1. 创建场景 Scene（场景是所有物体的容器）
 // ============================================
@@ -78,6 +79,7 @@ let queenModel = null;
 const queenTarget = { x: 1, z: 0 };
 let carModel = null;
 const obstacles = [];
+const pf = createAABBAvoidance(obstacles, { safetyMargin: 1.5, detourMargin: 1.8 });
 loader.load(
     './models/car.glb',
     (gltf) => {
@@ -256,11 +258,11 @@ renderer.domElement.addEventListener('click', (event) => {
     if (clickBox.containsPoint(new THREE.Vector3(endX, 0.5, endZ))) return;
 
     // 检测直线路径是否被障碍物挡住
-    const blocked = isPathBlocked(startX, startZ, endX, endZ);
+    const blocked = pf.isPathBlocked(startX, startZ, endX, endZ);
 
     if (blocked) {
         // 规则 3：路径经过包围盒 → 绕行（自动计算安全路径点序列）
-        const waypoints = computeWaypoints(startX, startZ, endX, endZ);
+        const waypoints = pf.computeWaypoints(startX, startZ, endX, endZ);
         moveQueue = [...waypoints, { x: endX, z: endZ }];
 
         // 可视化：绘制完整路径
@@ -273,118 +275,7 @@ renderer.domElement.addEventListener('click', (event) => {
     }
 });
 
-// 检测直线路径是否被障碍物挡住
-function isPathBlocked(x1, z1, x2, z2) {
-    for (const obstacle of obstacles) {
-        obstacle.updateWorldMatrix(true, true); // true,true 才能更新所有子节点的矩阵
-        const box = new THREE.Box3().setFromObject(obstacle);
-        box.expandByScalar(1.5); // 安全距离
-
-        // 从起点到终点采样（跳过起点和终点本身，只检测路径中间段是否穿模）
-        const totalDist = Math.sqrt((x2 - x1) ** 2 + (z2 - z1) ** 2);
-        const samples = Math.max(50, Math.ceil(totalDist / 0.3));
-        for (let i = 1; i < samples; i++) {
-            const t = i / samples;
-            const px = x1 + (x2 - x1) * t;
-            const pz = z1 + (z2 - z1) * t;
-            if (box.containsPoint(new THREE.Vector3(px, 0.5, pz))) {
-                return true;
-            }
-        }
-    }
-    return false;
-}
-
-// 生成绕行路径：返回一个安全路径点数组，美女会依次经过这些点
-// 返回值 = [] 表示直线可达，不需要绕行
-function computeWaypoints(fromX, fromZ, toX, toZ) {
-    carModel.updateWorldMatrix(true, true);
-    const carBox = new THREE.Box3().setFromObject(carModel);
-
-    const minX = carBox.min.x, maxX = carBox.max.x;
-    const minZ = carBox.min.z, maxZ = carBox.max.z;
-    const cx = (minX + maxX) / 2, cz = (minZ + maxZ) / 2;
-    const hw = (maxX - minX) / 2, hz = (maxZ - minZ) / 2;
-
-    const m = 1.8; // 绕行安全边距
-
-    // ── 第 1 级：2 段路径，经过包围盒面中点向外推 m 距离 ──
-    const faceCenters = [
-        { x: cx, z: cz + hz + m },  // 前
-        { x: cx, z: cz - hz - m },  // 后
-        { x: cx - hw - m, z: cz },          // 左
-        { x: cx + hw + m, z: cz },          // 右
-    ];
-    for (const p of faceCenters) {
-        if (!isPathBlocked(fromX, fromZ, p.x, p.z) && !isPathBlocked(p.x, p.z, toX, toZ)) {
-            return [p];
-        }
-    }
-
-    // ── 第 2 级：单个角点绕行（按总路程排序，最短优先）──
-    const corners = [
-        { x: minX - m, z: minZ - m },  // 0: 后左
-        { x: maxX + m, z: minZ - m },  // 1: 后右
-        { x: maxX + m, z: maxZ + m },  // 2: 前右
-        { x: minX - m, z: maxZ + m },  // 3: 前左
-    ];
-    // 排序副本用于单角点检查（不修改原始数组，后续相邻/对角依赖原始索引）
-    const sortedCorners = [...corners].sort((a, b) => {
-        const da = dist(fromX, fromZ, a.x, a.z) + dist(a.x, a.z, toX, toZ);
-        const db = dist(fromX, fromZ, b.x, b.z) + dist(b.x, b.z, toX, toZ);
-        return da - db;
-    });
-    for (const c of sortedCorners) {
-        if (!isPathBlocked(fromX, fromZ, c.x, c.z) && !isPathBlocked(c.x, c.z, toX, toZ)) {
-            return [c];
-        }
-    }
-
-    // ── 第 3 级：相邻角点对（使用原始 corners 索引，先试单角，不行再用双角）──
-    const adj = [[0, 1], [1, 2], [2, 3], [3, 0]];
-    for (const [i, j] of adj) {
-        const a = corners[i], b = corners[j];
-        const first = dist(fromX, fromZ, a.x, a.z) <= dist(fromX, fromZ, b.x, b.z) ? a : b;
-        const second = first === a ? b : a;
-
-        if (!isPathBlocked(fromX, fromZ, first.x, first.z) &&
-            !isPathBlocked(first.x, first.z, toX, toZ)) {
-            return [first];
-        }
-
-        if (!isPathBlocked(fromX, fromZ, first.x, first.z) &&
-            !isPathBlocked(first.x, first.z, second.x, second.z) &&
-            !isPathBlocked(second.x, second.z, toX, toZ)) {
-            return [first, second];
-        }
-    }
-
-    // ── 第 4 级：对角（先试单角，不行再用双角）──
-    const diag = [[0, 2], [1, 3]];
-    for (const [i, j] of diag) {
-        const a = corners[i], b = corners[j];
-        const first = dist(fromX, fromZ, a.x, a.z) <= dist(fromX, fromZ, b.x, b.z) ? a : b;
-        const second = first === a ? b : a;
-
-        if (!isPathBlocked(fromX, fromZ, first.x, first.z) &&
-            !isPathBlocked(first.x, first.z, toX, toZ)) {
-            return [first];
-        }
-
-        if (!isPathBlocked(fromX, fromZ, first.x, first.z) &&
-            !isPathBlocked(first.x, first.z, second.x, second.z) &&
-            !isPathBlocked(second.x, second.z, toX, toZ)) {
-            return [first, second];
-        }
-    }
-
-    // ── 第 5 级（极端兜底）：直接返回最近的角点 ──
-    corners.sort((a, b) => dist(a.x, a.z, fromX, fromZ) - dist(b.x, b.z, fromX, fromZ));
-    return [corners[0]];
-}
-
-// 2D 距离
-function dist(x1, z1, x2, z2) {
-    return Math.sqrt((x2 - x1) ** 2 + (z2 - z1) ** 2);
-}
+// ============================================
+// 9. 路径规划工具（已抽取为独立模块 pathfinder.js）
+// ============================================
 
