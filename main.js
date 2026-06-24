@@ -175,8 +175,8 @@ loader.load(
         const model = gltf.scene;
         // 保存到 soldier 对象
         soldier.model = model;
-        // 缩放 0.5 倍，Z 轴设为 -0.5 是镜像翻转（因为模型默认朝向反了）
-        model.scale.set(0.5, 0.5, -0.5);
+        // 缩放 0.4 倍，Z 轴设为 -0.4 是镜像翻转（因为模型默认朝向反了）
+        model.scale.set(0.4, 0.4, -0.4);
         // 放在 (-1.5, 0, 0)
         model.position.set(-1.5, 0, 0);
         scene.add(model);
