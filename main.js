@@ -75,7 +75,7 @@ controls.zoomToCursor = true;
 // 加载外部模型
 const loader = new GLTFLoader();
 let queenModel = null;
-const queenTarget = { z: 0 }; 
+const queenTarget = { x: 1, z: 0 };
 loader.load(
     './models/car.glb',
     (gltf) => {
@@ -148,9 +148,16 @@ function animate() {
     // 7.2 更新轨道控制器（必须每帧调用，阻尼效果才能生效）
     controls.update();
     // 平滑移动：每次靠近目标位置的 10%，看起来就是由快到慢的滑动
+    // if (queenModel) {
+    //     queenModel.position.z += (queenTarget.z - queenModel.position.z) * 0.1;
+    // }
+
+        // 美女平滑走向目标位置
     if (queenModel) {
-      queenModel.position.z += (queenTarget.z - queenModel.position.z) * 0.1;
+      queenModel.position.x += (queenTarget.x - queenModel.position.x) * 0.05;
+      queenModel.position.z += (queenTarget.z - queenModel.position.z) * 0.05;
     }
+
     // 7.3 渲染：把场景和相机交给渲染器，绘制到 canvas 上
     renderer.render(scene, camera);
 }
@@ -159,25 +166,28 @@ function animate() {
 animate();
 
 // ============================================
-// 8. 点击交互：点击美女，向前移动
+// 8. 点击地面 → 美女移动到点击位置
 // ============================================
 const raycaster = new THREE.Raycaster();
 const pointer = new THREE.Vector2();
-
+// 创建一个数学平面（y=0 的地面），用于检测射线落点
+const groundPlane = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0);
 renderer.domElement.addEventListener('click', (event) => {
-  const raycaster = new THREE.Raycaster();
-  const pointer = new THREE.Vector2();
+    // 1. 鼠标归一化坐标
+    pointer.x = (event.clientX / window.innerWidth) * 2 - 1;
+    pointer.y = -(event.clientY / window.innerHeight) * 2 + 1;
 
-  pointer.x = (event.clientX / window.innerWidth) * 2 - 1;
-  pointer.y = -(event.clientY / window.innerHeight) * 2 + 1;
+    // 2. 发射射线
+    raycaster.setFromCamera(pointer, camera);
 
-  raycaster.setFromCamera(pointer, camera);
+    // 3. 计算射线与地面 (y=0) 的交点
+    const intersectPoint = new THREE.Vector3();
+    raycaster.ray.intersectPlane(groundPlane, intersectPoint);
 
-  if (queenModel) {
-    const intersects = raycaster.intersectObjects(queenModel.children, true);
-    if (intersects.length > 0) {
-      queenTarget.z += 1;   // ← 只设目标，不直接改位置
+    if (intersectPoint && queenModel) {
+        // 只取 x 和 z，y 保持模型原来的 y 值（不让模型飞到天上或钻地）
+        queenTarget.x = intersectPoint.x;
+        queenTarget.z = intersectPoint.z;
     }
-  }
 });
 
