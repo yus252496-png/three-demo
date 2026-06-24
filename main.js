@@ -90,6 +90,7 @@ function updateProgress() {
 let queenModel = null;
 const queenTarget = { x: 1, z: 0 };
 let carModel = null;
+let skinModel = null; // 弹跳动画用
 const obstacles = [];
 const pf = createAABBAvoidance(obstacles, { safetyMargin: 0.6, detourMargin: 1.0 });
 loader.load(
@@ -131,6 +132,7 @@ loader.load(
     './models/skin.glb',
     (gltf) => {
         const model = gltf.scene;
+        skinModel = model;
         model.scale.set(0.5, 0.5, 0.5);    // 调整大小
         model.position.set(-1, 0, 0);  // 调整位置
         scene.add(model);
@@ -235,6 +237,12 @@ function animate() {
             queenModel.position.x += dx * speed;
             queenModel.position.z += dz * speed;
         }
+    }
+
+    // 蝙蝠侠原地弹跳动画
+    if (skinModel) {
+        const t = performance.now() / 300; // 速度
+        skinModel.position.y = Math.abs(Math.sin(t)) * 0.8; // 0 ~ 0.8 跳跃
     }
 
     // 7.3 渲染：把场景和相机交给渲染器，绘制到 canvas 上
