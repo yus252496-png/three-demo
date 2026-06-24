@@ -43,7 +43,7 @@ document.body.appendChild(renderer.domElement);
 const controls = new OrbitControls(camera, renderer.domElement);
 // 启用阻尼（物理惯性）效果——拖拽松开后视角会缓慢停下来，手感更顺滑
 controls.enableDamping = true;
-
+controls.zoomToCursor = true;  
 // // ============================================
 // // 4. 创建立方体（Box）
 // // ============================================
@@ -75,11 +75,26 @@ controls.enableDamping = true;
 // 加载外部模型
 const loader = new GLTFLoader();
 loader.load(
-  './models/car.glb',  // 替换成实际路径
+  './models/car.glb',  
   (gltf) => {
     const model = gltf.scene;
-    model.scale.set(1, 1, 1);    // 调整大小
+    model.scale.set(0.5, 0.5, 0.5);    // 调整大小
     model.position.set(0, 0, 0);  // 调整位置
+    scene.add(model);
+  },
+  (xhr) => {
+    console.log(`加载进度: ${(xhr.loaded / xhr.total * 100).toFixed(2)}%`);
+  },
+  (error) => {
+    console.error('模型加载失败:', error);
+  }
+);
+loader.load(
+  './models/queen.glb',  
+  (gltf) => {
+    const model = gltf.scene;
+    model.scale.set(0.5, 0.5, 0.5);    // 调整大小
+    model.position.set(1, 0, 0);  // 调整位置
     scene.add(model);
   },
   (xhr) => {
