@@ -237,9 +237,29 @@ function drawPath(points, safe) {
     scene.add(pathLine);
 }
 
-renderer.domElement.addEventListener('click', (event) => {
-    pointer.x = (event.clientX / window.innerWidth) * 2 - 1;
-    pointer.y = -(event.clientY / window.innerHeight) * 2 + 1;
+// 点击与拖动区分：按住拖动控制视角 → 不移动美女
+// 轻点（无拖动）→ 美女移动到目标位置
+let pointerDownPos = { x: 0, y: 0 };
+let pointerDownTime = 0;
+
+renderer.domElement.addEventListener('pointerdown', (e) => {
+    pointerDownPos.x = e.clientX;
+    pointerDownPos.y = e.clientY;
+    pointerDownTime = Date.now();
+});
+
+renderer.domElement.addEventListener('pointerup', (e) => {
+    // 计算拖动距离和时间
+    const dx = e.clientX - pointerDownPos.x;
+    const dy = e.clientY - pointerDownPos.y;
+    const dt = Date.now() - pointerDownTime;
+
+    // 鼠标移动超过 10px 或按住超过 300ms → 视为拖动，不触发移动
+    if (Math.sqrt(dx * dx + dy * dy) > 10 || dt > 300) return;
+
+    // ── 是点击，不是拖动 ──
+    pointer.x = (e.clientX / window.innerWidth) * 2 - 1;
+    pointer.y = -(e.clientY / window.innerHeight) * 2 + 1;
 
     raycaster.setFromCamera(pointer, camera);
     const intersectPoint = new THREE.Vector3();
