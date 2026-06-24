@@ -21,9 +21,6 @@ scene.background = new THREE.Color(0xaa1a2e);
 // ============================================
 const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
 // 把相机向后移动 5 个单位（沿 Z 轴负方向后退）
-// 这样相机在原点前方，能看到原点处的物体
-camera.position.z = 5;
-// 把相机向后移动 5 个单位（沿 Z 轴负方向后退）
 camera.position.set(3, 3, 5);
 
 // ============================================
