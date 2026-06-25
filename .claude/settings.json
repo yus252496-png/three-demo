@@ -1,10 +1,28 @@
 {
   "permissions": {
     "allow": [
-      "Bash(npx serve *)",
-      "Bash(lsof -ti:5500)",
-      "Bash(netstat -ano)",
-      "Bash(taskkill //PID 17892 //F)"
+      "Bash(npx *)",
+      "Bash(npm *)",
+      "Bash(netstat *)",
+      "Bash(taskkill *)",
+      "Bash(cp *)",
+      "Bash(ls *)",
+      "Bash(rm *)",
+      "Bash(curl *)",
+      "Bash(kill *)",
+      "Bash(sleep *)",
+      "Bash(grep *)",
+      "Bash(awk *)",
+      "Bash(xargs *)",
+      "Bash(find *)",
+      "Bash(diff *)",
+      "Bash(sleep 3 && cat /dev/null 2>/dev/null; curl -s -o /dev/null -w \"%{http_code}\" http://localhost:5173 2>/dev/null || curl -s -o /dev/null -w \"%{http_code}\" http://localhost:5174 2>/dev/null || curl -s -o /dev/null -w \"%{http_code}\" http://localhost:5175 2>/dev/null; echo \"\")",
+      "Read(//dev/**)",
+      "Bash(pkill -f \"vite\")",
+      "Bash(curl -s -o /dev/null -w \"Port: %{http_code}\" http://localhost:5173)",
+      "Bash(curl -s -o /dev/null -w \"OK\" http://localhost:5173)",
+      "Bash(curl -s -o /dev/null -w \"OK\" http://localhost:5174)",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\" http://localhost:5173)"
     ]
   }
 }

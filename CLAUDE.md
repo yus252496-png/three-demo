@@ -1,65 +1,62 @@
-# Three.js 人物绕行验证
+# 3D 大屏系统
 
 ## 启动
 ```bash
-npx serve .
+cd bigscreen
+npm run dev        # 开发 → http://localhost:5173
+npm run build      # 构建
 ```
 
-## 模块架构（重构后）
+## 技术栈
+Vite + React 19 + TypeScript + R3F + Ant Design + Zustand
 
+## 模块架构
 ```
-main.js（编排层）
-├─ scene-setup.js       场景/相机/渲染器/光照/地面初始化
-├─ selection-system.js   点击选中角色、射线检测
-├─ movement-animator.js  移动队列、路径跟随、转向、骨骼动画
-├─ pathfinder.js         AABB 碰撞检测 + 5级回退绕行算法
-└─ three.js (CDN)        底层渲染库
+src/
+├── components/
+│   ├── three/           ← 3D 场景组件（R3F）
+│   │   ├── Scene.tsx          Canvas 入口
+│   │   ├── SceneLights.tsx    光照
+│   │   ├── Ground.tsx         地面 + 网格
+│   │   ├── SceneController.tsx 交互 + 移动动画
+│   │   ├── Car.tsx            汽车（障碍物）
+│   │   ├── Soldier.tsx        士兵（可选角色）
+│   │   ├── Queen.tsx          女王（可选角色）
+│   │   ├── Batman.tsx         蝙蝠侠（装饰）
+│   │   ├── SelectorArrow.tsx  选中箭头
+│   │   └── PathLine.tsx       路径线
+│   └── business/
+│       └── LoadingScreen.tsx  加载进度条
+├── layouts/MainLayout.tsx     系统布局（右侧导航）
+├── pages/BigScreen.tsx        大屏页（全屏控制）
+├── store/sceneStore.ts        zustand 状态
+├── utils/
+│   ├── pathfinder.ts          AABB 避障规划器
+│   └── modelRegistry.ts       模型引用注册表
+└── types/scene.ts             类型定义
 ```
-
-**设计原则：** 模块间不直接引用，`main.js` 是唯一的编排层。
 
 ## 模型
 | 文件 | 位置 | 说明 |
 |---|---|---|
-| `models/car.glb` | (0,0,0) | 障碍物，显示红色碰撞框 |
-| `models/Soldier.glb` | (-1.5,0,0) | 可选角色，待机/走路/跑步动画 |
-| `models/queen.glb` | (3,0,0) | 可选角色 |
+| `public/models/car.glb` | (0,0,0) | 障碍物 |
+| `public/models/Soldier.glb` | (-1.5,0,0) | 带动画 |
+| `public/models/queen.glb` | (1.5,0,0) | 可选角色 |
+| `public/models/skin.glb` | (0,0.7,0) | 蝙蝠侠装饰 |
 
-## 交互
-| 操作 | 效果 |
-|---|---|
-| 点击角色 | 选中 |
-| 点击地面 | 走向目标 |
-| 鼠标拖拽 | 旋转视角 |
-| 滚轮 | 缩放 |
-
-路径被阻挡时自动绕行，到达后路径线 2 秒淡出。
-
-## 关键参数
-| 参数 | 值 | 说明 |
-|---|---|---|
-| `safetyMargin` | 0.6 | 碰撞检测范围（包围盒外扩） |
-| `detourMargin` | 1.0 | 绕行点距包围盒距离 |
-| `RUN_THRESHOLD` | 4 | 跑步/走路切换阈值 |
-
----
+## 部署
+```bash
+docker build -t bigscreen .
+docker run -d -p 80:80 bigscreen
+```
 
 ## 开发准则
-
 ### 1. 先想后写
-- 不确定的先问，有多个方案列出选择，觉得有问题直接说
-
+- 不确定的先问，有多个方案列出选择
 ### 2. 保持简单
-- 只做被要求的，不造通用抽象，不提前加灵活性
-- 200 行能 50 行搞定的就重写
-
-### 3. 手术刀式修改
-- 只动和需求直接相关的代码，不改注释/格式/未损坏的代码
-- 匹配既有代码风格
-- 改完后删掉不再使用的变量/import/函数，但不要顺手删已有的废弃代码
-
+- 只做被要求的，不造通用抽象
+### 3. 手术
+刀式修改
+- 只动相关代码，匹配既有风格
 ### 4. 目标驱动
-复杂任务先列步骤：
-```
-1. [做什么] → 验证：[怎么确认做对了]
-```
+- 复杂任务先列步骤：`[做什么] → 验证：[怎么确认做对了]`
