@@ -2,7 +2,6 @@
 
 ## 启动
 ```bash
-cd bigscreen
 npm run dev        # 开发 → http://localhost:5173
 npm run build      # 构建
 ```
@@ -19,17 +18,19 @@ src/
 │   │   ├── SceneLights.tsx    光照
 │   │   ├── Ground.tsx         地面 + 网格
 │   │   ├── SceneController.tsx 交互 + 移动动画
+│   │   ├── GroundClickCatcher.tsx 地面点击捕获
 │   │   ├── Car.tsx            汽车（障碍物）
 │   │   ├── Soldier.tsx        士兵（可选角色）
 │   │   ├── Queen.tsx          女王（可选角色）
 │   │   ├── Batman.tsx         蝙蝠侠（装饰）
-│   │   ├── SelectorArrow.tsx  选中箭头
 │   │   └── PathLine.tsx       路径线
 │   └── business/
 │       └── LoadingScreen.tsx  加载进度条
 ├── layouts/MainLayout.tsx     系统布局（右侧导航）
 ├── pages/BigScreen.tsx        大屏页（全屏控制）
-├── store/sceneStore.ts        zustand 状态
+├── store/
+│   ├── sceneStore.ts          zustand 场景状态
+│   └── loadingStore.ts        加载进度
 ├── utils/
 │   ├── pathfinder.ts          AABB 避障规划器
 │   └── modelRegistry.ts       模型引用注册表
@@ -55,8 +56,7 @@ docker run -d -p 80:80 bigscreen
 - 不确定的先问，有多个方案列出选择
 ### 2. 保持简单
 - 只做被要求的，不造通用抽象
-### 3. 手术
-刀式修改
+### 3. 手术刀式修改
 - 只动相关代码，匹配既有风格
 ### 4. 目标驱动
 - 复杂任务先列步骤：`[做什么] → 验证：[怎么确认做对了]`

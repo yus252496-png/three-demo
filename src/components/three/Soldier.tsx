@@ -1,26 +1,46 @@
-import { useGLTF, useAnimations } from '@react-three/drei'
+import { useGLTF } from '@react-three/drei'
 import { useEffect, useRef } from 'react'
 import type { ThreeEvent } from '@react-three/fiber'
 import * as THREE from 'three'
 import { modelRegistry } from '../../utils/modelRegistry'
 import { useSceneStore } from '../../store/sceneStore'
 
-export function Soldier({ onLoaded }: { onLoaded?: () => void }) {
+export function Soldier() {
   const groupRef = useRef<THREE.Group>(null)
   const { scene, animations } = useGLTF('/models/Soldier.glb')
-  const { actions, mixer } = useAnimations(animations, groupRef)
   const registered = useRef(false)
 
+  // 原始代码的命名方式：按索引取动画 [0=idle, 1=walk, 2=run]
+  const actionsRef = useRef<Record<string, THREE.AnimationAction | null>>({
+    idle: null,
+    walk: null,
+    run: null,
+  })
+  const mixerRef = useRef<THREE.AnimationMixer | null>(null)
+
   useEffect(() => {
-    if (groupRef.current && actions && !registered.current) {
+    if (groupRef.current && animations?.length && !registered.current) {
       registered.current = true
-      modelRegistry.soldier = groupRef.current
-      modelRegistry.soldierActions = actions as Record<string, THREE.AnimationAction | null>
+
+      // 和原始代码一样：手动创建 AnimationMixer，按索引绑定动作
+      const model = groupRef.current
+      const mixer = new THREE.AnimationMixer(model)
+      mixerRef.current = mixer
+
+      const actions = {
+        idle: mixer.clipAction(animations[0]),
+        walk: mixer.clipAction(animations[1]),
+        run: mixer.clipAction(animations[2]),
+      }
+      actionsRef.current = actions
+
+      // 注册到全局
+      modelRegistry.soldier = model
+      modelRegistry.soldierActions = actions
       modelRegistry.soldierMixer = mixer
 
-      const idle = actions['idle'] || actions['Idle']
-      if (idle) idle.play()
-      onLoaded?.()
+      // 默认播放待机动画
+      actions.idle?.play()
     }
 
     return () => {
@@ -31,7 +51,7 @@ export function Soldier({ onLoaded }: { onLoaded?: () => void }) {
         registered.current = false
       }
     }
-  }, [scene, actions, mixer, onLoaded])
+  }, [scene, animations])
 
   const pointerRef = useRef({ x: 0, y: 0, time: 0 })
 

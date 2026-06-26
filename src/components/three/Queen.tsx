@@ -5,7 +5,7 @@ import * as THREE from 'three'
 import { modelRegistry } from '../../utils/modelRegistry'
 import { useSceneStore } from '../../store/sceneStore'
 
-export function Queen({ onLoaded }: { onLoaded?: () => void }) {
+export function Queen() {
   const { scene } = useGLTF('/models/queen.glb')
   const groupRef = useRef<THREE.Group>(null)
   const registered = useRef(false)
@@ -14,7 +14,6 @@ export function Queen({ onLoaded }: { onLoaded?: () => void }) {
     if (groupRef.current && !registered.current) {
       registered.current = true
       modelRegistry.queen = groupRef.current
-      onLoaded?.()
     }
 
     return () => {
@@ -23,7 +22,7 @@ export function Queen({ onLoaded }: { onLoaded?: () => void }) {
         registered.current = false
       }
     }
-  }, [scene, onLoaded])
+  }, [scene])
 
   const pointerRef = useRef({ x: 0, y: 0, time: 0 })
 

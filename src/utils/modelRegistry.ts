@@ -16,11 +16,17 @@ export const modelRegistry = {
   /** 由 SceneController 注册：停止士兵动画并切回 idle */
   stopSoldier: null as (() => void) | null,
 
-  /** 获取路径规划器（懒初始化） */
+  /** 缓存的路径规划器实例 */
+  _pathfinder: null as ReturnType<typeof createAABBAvoidance> | null,
+
+  /** 获取路径规划器（懒初始化，只创建一次） */
   getPathfinder() {
-    return createAABBAvoidance(this.obstacles, {
-      safetyMargin: 0.6,
-      detourMargin: 1.0,
-    })
+    if (!this._pathfinder) {
+      this._pathfinder = createAABBAvoidance(this.obstacles, {
+        safetyMargin: 0.6,
+        detourMargin: 1.0,
+      })
+    }
+    return this._pathfinder
   },
 }

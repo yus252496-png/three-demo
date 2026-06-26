@@ -1,5 +1,6 @@
 import { Canvas } from '@react-three/fiber'
-import { OrbitControls } from '@react-three/drei'
+import { OrbitControls, useProgress } from '@react-three/drei'
+import { useState, useEffect } from 'react'
 import { SceneLights } from './SceneLights'
 import { Ground } from './Ground'
 import { Car } from './Car'
@@ -8,16 +9,9 @@ import { Queen } from './Queen'
 import { Batman } from './Batman'
 import { GroundClickCatcher } from './GroundClickCatcher'
 import { SceneController } from './SceneController'
-import { useCallback } from 'react'
 import { LoadingScreen } from '../business/LoadingScreen'
-import { useLoadingStore, calcProgress, TOTAL_MODELS } from '../../store/loadingStore'
 
 export function Scene() {
-  const loaded = useLoadingStore((s) => s.loaded)
-  const done = loaded >= TOTAL_MODELS
-
-  const markOne = useCallback(() => useLoadingStore.getState().markOne(), [])
-
   return (
     <>
       <Canvas
@@ -29,16 +23,57 @@ export function Scene() {
 
         <SceneLights />
         <Ground />
-        <Car onLoaded={markOne} />
-        <Soldier onLoaded={markOne} />
-        <Queen onLoaded={markOne} />
-        <Batman onLoaded={markOne} />
+        <Car />
+        <Soldier />
+        <Queen />
+        <Batman />
 
         <GroundClickCatcher />
         <SceneController />
       </Canvas>
 
-      {!done && <LoadingScreen progress={calcProgress(loaded)} />}
+      <LoadingOverlay />
     </>
   )
+}
+
+/**
+ * 加载覆盖层（单调递增 + 防抖隐藏）
+ *
+ * useProgress 底层使用 THREE.DefaultLoadingManager，
+ * GLTF 加载过程中 total 可能动态增加导致 % 回退。
+ *
+ * 三个防护：
+ * 1. 单调递增 — 始终取已出现的最大值，保证只进不退
+ * 2. 防抖隐藏 — active 变为 false 后等待 500ms 再隐藏，
+ *    避免 GLTF 加载阶段间的短暂间隙导致闪动
+ * 3. 加载中 active 为 true 时不显示 100%，防止假完成
+ */
+function LoadingOverlay() {
+  const { loaded, total, active } = useProgress()
+  const [maxPct, setMaxPct] = useState(0)
+  const [hide, setHide] = useState(false)
+
+  // 原始百分比（可能回退）
+  const rawPct = total > 0 ? Math.round((loaded / total) * 100) : 0
+
+  // ① 单调递增：始终取历史最高值
+  useEffect(() => {
+    if (rawPct > maxPct) setMaxPct(rawPct)
+  }, [rawPct, maxPct])
+
+  // ② 防抖隐藏：active=false 后等 500ms 确认加载真的结束了
+  useEffect(() => {
+    if (!active && maxPct > 0) {
+      const t = setTimeout(() => setHide(true), 500)
+      return () => clearTimeout(t)
+    }
+    setHide(false)
+  }, [active, maxPct])
+
+  // 显示值 = 最高见过的百分比（从 0 开始）
+  const displayPct = maxPct
+
+  if (hide) return null
+  return <LoadingScreen progress={displayPct} />
 }

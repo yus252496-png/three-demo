@@ -1,6 +1,6 @@
 import { useFrame } from '@react-three/fiber'
 import * as THREE from 'three'
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useSceneStore } from '../../store/sceneStore'
 import { modelRegistry } from '../../utils/modelRegistry'
 import type { Waypoint } from '../../types/scene'
@@ -22,12 +22,16 @@ export function SceneController() {
   const arrowRef = useRef<THREE.Mesh>(null)
   const soldierAnimRef = useRef<THREE.AnimationAction | null>(null)
 
-  // 订阅移动队列变化
+  // 路径线透明度（响应式，淡出时触发重渲染）
+  const [pathOpacity, setPathOpacity] = useState(1)
+
+  // 订阅移动队列变化（新路径 → 重置透明度）
   useEffect(() => {
     const unsub = useSceneStore.subscribe((state, prevState) => {
       if (state.moveQueue !== prevState.moveQueue) {
         moveQueueRef.current = state.moveQueue
         pathClearTimerRef.current = 0
+        setPathOpacity(1)
       }
     })
     return unsub
@@ -94,17 +98,15 @@ export function SceneController() {
       modelRegistry.soldierMixer.update(Math.min(delta, 0.1))
     }
 
-    // 路径线从尾部逐渐缩短
+    // 路径线整体淡出
     if (pathClearTimerRef.current > 0) {
       pathClearTimerRef.current--
-      // 前 30 帧保持不动 → 之后每 6 帧从尾部去掉一个点
-      if (pathClearTimerRef.current < 90 && pathClearTimerRef.current % 6 === 0) {
-        const current = useSceneStore.getState().pathPoints
-        if (current && current.length > 2) {
-          setPathPoints(current.slice(0, -1))
-        }
+      const alpha = pathClearTimerRef.current / 120
+      if (alpha !== pathOpacity) setPathOpacity(alpha)
+      if (pathClearTimerRef.current === 0) {
+        setPathPoints(null)
+        setPathOpacity(1) // 重置供下次使用
       }
-      if (pathClearTimerRef.current === 0) setPathPoints(null)
     }
 
     // ★ 箭头跟随：直接操作 Three.js Mesh 位置，不走 React 渲染
@@ -126,7 +128,7 @@ export function SceneController() {
         <coneGeometry args={[0.12, 0.2, 8]} />
         <meshBasicMaterial color="#00ff88" />
       </mesh>
-      <PathLine points={pathPoints} />
+      <PathLine points={pathPoints} opacity={pathOpacity} />
     </>
   )
 }

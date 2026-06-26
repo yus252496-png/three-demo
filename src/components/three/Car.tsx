@@ -3,7 +3,7 @@ import * as THREE from 'three'
 import { useEffect, useRef, useState } from 'react'
 import { modelRegistry } from '../../utils/modelRegistry'
 
-export function Car({ onLoaded }: { onLoaded?: () => void }) {
+export function Car() {
   const { scene } = useGLTF('/models/car.glb')
   const groupRef = useRef<THREE.Group>(null)
   const [boxCorners, setBoxCorners] = useState<[number, number, number][] | null>(null)
@@ -14,7 +14,6 @@ export function Car({ onLoaded }: { onLoaded?: () => void }) {
       registered.current = true
       modelRegistry.car = groupRef.current
       modelRegistry.obstacles.push(groupRef.current)
-      onLoaded?.()
 
       // 延迟计算碰撞包围盒
       setTimeout(() => {
@@ -45,7 +44,7 @@ export function Car({ onLoaded }: { onLoaded?: () => void }) {
         registered.current = false
       }
     }
-  }, [scene, onLoaded])
+  }, [scene])
 
   return (
     <>
