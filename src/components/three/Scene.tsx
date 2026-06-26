@@ -38,7 +38,7 @@ export function Scene() {
         <SceneController />
         <ScreenshotCapture />
 
-        <Environment preset="city" environmentIntensity={0.4} />
+        <Environment files="/hdri/potsdamer_platz_1k.hdr" environmentIntensity={0.4} />
       </Canvas>
 
       <LoadingOverlay />

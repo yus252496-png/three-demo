@@ -1,4 +1,4 @@
-import { Tag, Button, Descriptions } from 'antd'
+import { Tag, Button } from 'antd'
 import { CloseOutlined } from '@ant-design/icons'
 import { useSceneStore, type DeviceInfo } from '../../store/sceneStore'
 
@@ -11,7 +11,7 @@ const statusColors: Record<DeviceInfo['status'], string> = {
 
 /** 设备状态中文名 */
 const statusLabels: Record<DeviceInfo['status'], string> = {
-  online: '在线',
+  online: '运行中',
   standby: '待机',
   maintenance: '维护中',
 }

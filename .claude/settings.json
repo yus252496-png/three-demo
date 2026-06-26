@@ -17,7 +17,8 @@
       "Bash(find *)",
       "Bash(diff *)",
       "Bash(pkill -f *)",
-      "Bash(node *)"
+      "Bash(node *)",
+      "Bash(git stash *)"
     ]
   }
 }
