@@ -73,26 +73,33 @@ function LoadingOverlay() {
   const { loaded, total, active } = useProgress()
   const [maxPct, setMaxPct] = useState(0)
   const [hide, setHide] = useState(false)
+  // 确保先画 300ms 的 0% 再释放真实值（切回时让用户看到"重置"效果）
+  const [released, setReleased] = useState(false)
+  useEffect(() => {
+    const id = setTimeout(() => setReleased(true), 300)
+    return () => clearTimeout(id)
+  }, [])
 
-  // 原始百分比（可能回退）
   const rawPct = total > 0 ? Math.round((loaded / total) * 100) : 0
 
-  // ① 单调递增：始终取历史最高值
+  // ① 单调递增取历史最高 %（防止 total 增加导致 % 回退）
   useEffect(() => {
     if (rawPct > maxPct) setMaxPct(rawPct)
   }, [rawPct, maxPct])
 
-  // ② 防抖隐藏：active=false 后等 500ms 确认加载真的结束了
+  // ② 加载彻底完成后再等 500ms 才隐藏（防抖）
   useEffect(() => {
-    if (!active && maxPct > 0) {
+    if (!active && total > 0 && loaded >= total) {
       const t = setTimeout(() => setHide(true), 500)
       return () => clearTimeout(t)
     }
     setHide(false)
-  }, [active, maxPct])
+  }, [active, total, loaded])
 
-  // 显示值 = 最高见过的百分比（从 0 开始）
-  const displayPct = maxPct
+  // ③ released 前强制 0%，released 后正常计算
+  const done = !active && total > 0 && loaded >= total
+  const calcPct = total === 0 ? 0 : (done ? 100 : Math.min(maxPct, 99))
+  const displayPct = released ? calcPct : 0
 
   if (hide) return null
   return <LoadingScreen progress={displayPct} />

@@ -11,7 +11,7 @@ export function LoadingScreen({ progress }: { progress: number }) {
         <Progress
           percent={Math.round(progress)}
           strokeColor={{ from: '#108ee9', to: '#87d068' }}
-          showInfo
+          format={(pct) => `${pct}%`}
           style={{ width: 260 }}
         />
       </div>
