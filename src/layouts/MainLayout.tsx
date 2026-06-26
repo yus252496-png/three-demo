@@ -1,5 +1,5 @@
 import { Layout, Menu } from 'antd'
-import { ExperimentOutlined } from '@ant-design/icons'
+import { ExperimentOutlined, BarChartOutlined } from '@ant-design/icons'
 import { Outlet, useNavigate, useLocation } from 'react-router-dom'
 
 const { Sider, Content } = Layout
@@ -10,6 +10,11 @@ const menuItems = [
     icon: <ExperimentOutlined />,
     label: '3D 大屏',
   },
+  {
+    key: '/dashboard',
+    icon: <BarChartOutlined />,
+    label: '工业看板',
+  },
 ]
 
 export function MainLayout() {
@@ -18,8 +23,10 @@ export function MainLayout() {
 
   return (
     <Layout style={{ height: '100vh' }}>
-      <Content style={{ flex: 1, overflow: 'hidden', position: 'relative' }}>
-        <Outlet />
+      <Content style={{ flex: 1, overflow: 'hidden', position: 'relative', display: 'flex', flexDirection: 'column' }}>
+        <div style={{ flex: 1, position: 'relative', overflow: 'hidden' }}>
+          <Outlet />
+        </div>
       </Content>
       <Sider
         width={200}

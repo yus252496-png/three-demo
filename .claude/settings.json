@@ -16,13 +16,8 @@
       "Bash(xargs *)",
       "Bash(find *)",
       "Bash(diff *)",
-      "Bash(sleep 3 && cat /dev/null 2>/dev/null; curl -s -o /dev/null -w \"%{http_code}\" http://localhost:5173 2>/dev/null || curl -s -o /dev/null -w \"%{http_code}\" http://localhost:5174 2>/dev/null || curl -s -o /dev/null -w \"%{http_code}\" http://localhost:5175 2>/dev/null; echo \"\")",
-      "Read(//dev/**)",
-      "Bash(pkill -f \"vite\")",
-      "Bash(curl -s -o /dev/null -w \"Port: %{http_code}\" http://localhost:5173)",
-      "Bash(curl -s -o /dev/null -w \"OK\" http://localhost:5173)",
-      "Bash(curl -s -o /dev/null -w \"OK\" http://localhost:5174)",
-      "Bash(curl -s -o /dev/null -w \"%{http_code}\" http://localhost:5173)"
+      "Bash(pkill -f *)",
+      "Bash(node *)"
     ]
   }
 }

@@ -20,7 +20,7 @@ export function LoadingScreen({ progress }: { progress: number }) {
 }
 
 const overlayStyle: React.CSSProperties = {
-  position: 'fixed',
+  position: 'absolute',
   inset: 0,
   zIndex: 100,
   display: 'flex',

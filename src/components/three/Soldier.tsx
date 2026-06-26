@@ -19,6 +19,16 @@ export function Soldier() {
   const mixerRef = useRef<THREE.AnimationMixer | null>(null)
 
   useEffect(() => {
+    // 遍历场景，让所有 Mesh 投射/接收阴影
+    scene.traverse((child) => {
+      if ((child as THREE.Mesh).isMesh) {
+        child.castShadow = true
+        child.receiveShadow = true
+      }
+    })
+  }, [scene])
+
+  useEffect(() => {
     if (groupRef.current && animations?.length && !registered.current) {
       registered.current = true
 
@@ -74,6 +84,18 @@ export function Soldier() {
     store.clearMoveQueue()
     store.selectModel(groupRef.current, 'soldier')
     store.setPathPoints(null)
+    store.setDeviceInfo({
+      type: 'soldier',
+      name: '侦察兵 S-02',
+      status: 'online',
+      params: [
+        { label: '型号', value: 'Scout-X1' },
+        { label: '速度', value: '6 km/h' },
+        { label: '电量', value: '72%' },
+        { label: '武器', value: '标配' },
+        { label: '位置', value: `(${groupRef.current?.position.x.toFixed(1)}, ${groupRef.current?.position.z.toFixed(1)})` },
+      ],
+    })
   }
 
   return (

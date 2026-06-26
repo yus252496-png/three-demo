@@ -11,6 +11,16 @@ export function Queen() {
   const registered = useRef(false)
 
   useEffect(() => {
+    // 遍历场景，让所有 Mesh 投射/接收阴影
+    scene.traverse((child) => {
+      if ((child as THREE.Mesh).isMesh) {
+        child.castShadow = true
+        child.receiveShadow = true
+      }
+    })
+  }, [scene])
+
+  useEffect(() => {
     if (groupRef.current && !registered.current) {
       registered.current = true
       modelRegistry.queen = groupRef.current
@@ -45,6 +55,18 @@ export function Queen() {
     store.clearMoveQueue()
     store.selectModel(groupRef.current, 'queen')
     store.setPathPoints(null)
+    store.setDeviceInfo({
+      type: 'queen',
+      name: '指挥中枢 Q-01',
+      status: 'online',
+      params: [
+        { label: '型号', value: 'Queen-C2' },
+        { label: '通讯', value: '加密链路' },
+        { label: '覆盖', value: '200 m' },
+        { label: '电量', value: '94%' },
+        { label: '位置', value: `(${groupRef.current?.position.x.toFixed(1)}, ${groupRef.current?.position.z.toFixed(1)})` },
+      ],
+    })
   }
 
   return (

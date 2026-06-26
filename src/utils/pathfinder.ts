@@ -5,10 +5,12 @@ function dist(x1: number, z1: number, x2: number, z2: number) {
   return Math.sqrt((x2 - x1) ** 2 + (z2 - z1) ** 2)
 }
 
-/** 获取物体在 XZ 平面的包围盒参数 */
+/** 获取物体在 XZ 平面的包围盒参数（空盒时返回 null） */
 function getBoxParams(obj: THREE.Object3D) {
   obj.updateWorldMatrix(true, true)
   const box = new THREE.Box3().setFromObject(obj)
+  // 空盒检测：makeEmpty 后 min=(+∞,+∞,+∞) max=(-∞,-∞,-∞)
+  if (!isFinite(box.min.x) || !isFinite(box.max.x)) return null
   return {
     minX: box.min.x,
     maxX: box.max.x,
@@ -73,7 +75,9 @@ export function createAABBAvoidance(
     const primary = _obstacles[0]
     if (!primary) return []
 
-    const { minX, maxX, minZ, maxZ, cx, cz, hw, hz } = getBoxParams(primary)
+    const params = getBoxParams(primary)
+    if (!params) return []
+    const { minX, maxX, minZ, maxZ, cx, cz, hw, hz } = params
     const m = detourMargin
 
     // 第 1 级：面中点

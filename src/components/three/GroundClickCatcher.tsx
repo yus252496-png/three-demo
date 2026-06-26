@@ -43,15 +43,20 @@ export function GroundClickCatcher() {
     // 超出地面范围（±5）不移动
     if (Math.abs(endX) > 5 || Math.abs(endZ) > 5) return
 
+    // 过滤 NaN/Infinity 坐标
+    if (!isFinite(endX) || !isFinite(endZ)) return
+
     // 目标点在汽车包围盒内 → 不移动
     carModel.updateWorldMatrix(true, true)
     const clickBox = new THREE.Box3().setFromObject(carModel).expandByScalar(0.6)
-    if (clickBox.containsPoint(new THREE.Vector3(endX, 0.5, endZ))) return
+    if (!isFinite(clickBox.min.x) || clickBox.containsPoint(new THREE.Vector3(endX, 0.5, endZ))) return
 
     // 计算路径并移动
     const pf = pfRef.current
     const startX = selModel.position.x
     const startZ = selModel.position.z
+    // 过滤模型 NaN 坐标
+    if (!isFinite(startX) || !isFinite(startZ)) return
     const blocked = pf.isPathBlocked(startX, startZ, endX, endZ)
 
     if (blocked) {

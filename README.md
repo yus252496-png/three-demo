@@ -1,32 +1,28 @@
-# React + TypeScript + Vite
+# 3D 大屏系统
 
-This template provides a minimal setup to get React working in Vite with HMR and some Oxlint rules.
+一个基于 React Three Fiber 的工业监控 3D 大屏系统。
 
-Currently, two official plugins are available:
+## 快速开始
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
-
-## React Compiler
-
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
-
-## Expanding the Oxlint configuration
-
-If you are developing a production application, we recommend enabling type-aware lint rules by installing `oxlint-tsgolint` and editing `.oxlintrc.json`:
-
-```json
-{
-  "$schema": "./node_modules/oxlint/configuration_schema.json",
-  "plugins": ["react", "typescript", "oxc"],
-  "options": {
-    "typeAware": true
-  },
-  "rules": {
-    "react/rules-of-hooks": "error",
-    "react/only-export-components": ["warn", { "allowConstantExport": true }]
-  }
-}
+```bash
+npm install
+npm run dev       # → http://localhost:5173
+npm run build     # 构建生产版本
 ```
 
-See the [Oxlint rules documentation](https://oxc.rs/docs/guide/usage/linter/rules) for the full list of rules and categories.
+## 技术栈
+
+Vite + React 19 + TypeScript + R3F（@react-three/fiber + drei）+ Ant Design + Zustand + ECharts
+
+## 页面
+
+- **3D 大屏**（`/bigscreen`）— 3D 场景、模型交互、移动路径、覆盖面板
+- **工业看板**（`/dashboard`）— OEE/报警/产量/稼动率图表
+
+## 项目结构
+
+参见 [CLAUDE.md](CLAUDE.md)。
+
+## 模型
+
+GLB 模型文件位于 `public/models/`。

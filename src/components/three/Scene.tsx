@@ -1,6 +1,7 @@
-import { Canvas } from '@react-three/fiber'
-import { OrbitControls, useProgress } from '@react-three/drei'
+import { Canvas, useThree } from '@react-three/fiber'
+import { OrbitControls, useProgress, Environment } from '@react-three/drei'
 import { useState, useEffect } from 'react'
+import * as THREE from 'three'
 import { SceneLights } from './SceneLights'
 import { Ground } from './Ground'
 import { Car } from './Car'
@@ -10,6 +11,7 @@ import { Batman } from './Batman'
 import { GroundClickCatcher } from './GroundClickCatcher'
 import { SceneController } from './SceneController'
 import { LoadingScreen } from '../business/LoadingScreen'
+import { screenshotCapture } from '../../utils/screenshotCapture'
 
 export function Scene() {
   return (
@@ -18,6 +20,10 @@ export function Scene() {
         camera={{ position: [3, 3, 5], fov: 75, near: 0.1, far: 100 }}
         dpr={[1, 2]}
         gl={{ antialias: true }}
+        shadows
+        onCreated={({ scene }) => {
+          scene.fog = new THREE.FogExp2(0x1a1a2e, 0.05)
+        }}
       >
         <OrbitControls enableDamping dampingFactor={0.1} zoomToCursor />
 
@@ -30,11 +36,25 @@ export function Scene() {
 
         <GroundClickCatcher />
         <SceneController />
+        <ScreenshotCapture />
+
+        <Environment preset="city" environmentIntensity={0.4} />
       </Canvas>
 
       <LoadingOverlay />
     </>
   )
+}
+
+/**
+ * 截图捕获内部组件（注册 Three.js 引用供外部按钮调用）
+ */
+function ScreenshotCapture() {
+  const { gl, scene, camera } = useThree()
+  useEffect(() => {
+    screenshotCapture.set(gl, scene, camera)
+  }, [gl, scene, camera])
+  return null
 }
 
 /**

@@ -9,6 +9,7 @@ export const modelRegistry = {
   car: null as THREE.Object3D | null,
   queen: null as THREE.Object3D | null,
   soldier: null as THREE.Object3D | null,
+  batman: null as THREE.Object3D | null,
   soldierActions: null as Record<string, THREE.AnimationAction | null> | null,
   soldierMixer: null as THREE.AnimationMixer | null,
   obstacles: [] as THREE.Object3D[],
@@ -28,5 +29,18 @@ export const modelRegistry = {
       })
     }
     return this._pathfinder
+  },
+
+  /** 页面切换时重置所有模型引用 */
+  reset() {
+    this.car = null
+    this.queen = null
+    this.soldier = null
+    this.batman = null
+    this.soldierActions = null
+    this.soldierMixer = null
+    this.obstacles.length = 0
+    this.stopSoldier = null
+    this._pathfinder = null
   },
 }

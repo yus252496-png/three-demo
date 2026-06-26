@@ -6,8 +6,13 @@ import { modelRegistry } from '../../utils/modelRegistry'
 import type { Waypoint } from '../../types/scene'
 import { PathLine } from './PathLine'
 
+/** 缓动函数：ease-out cubic */
+function easeOutCubic(t: number): number {
+  return 1 - Math.pow(1 - t, 3)
+}
+
 /**
- * 场景控制器（纯移动 + 动画逻辑）
+ * 场景控制器（纯移动 + 动画逻辑 + 入场动画）
  * 点击选中/移动事件已委托给模型组件和 GroundClickCatcher
  */
 export function SceneController() {
@@ -24,6 +29,28 @@ export function SceneController() {
 
   // 路径线透明度（响应式，淡出时触发重渲染）
   const [pathOpacity, setPathOpacity] = useState(1)
+
+  // ========== 入场动画 ==========
+  const entranceRef = useRef({
+    startTime: 0,
+    done: false,
+    // 记录模型的初始 Y（动画从 -2 开始）
+    soldierY: -2,
+    queenY: -2,
+    batmanY: -2 + 0.7, // batman final y = 0.7, so start at -2 + 0.7
+  })
+
+  useEffect(() => {
+    entranceRef.current.startTime = performance.now()
+    entranceRef.current.done = false
+    // 初始时将模型放置到地面下方
+    const soldier = modelRegistry.soldier
+    const queen = modelRegistry.queen
+    const batman = modelRegistry.batman
+    if (soldier) soldier.position.y = entranceRef.current.soldierY
+    if (queen) queen.position.y = entranceRef.current.queenY
+    if (batman) batman.position.y = entranceRef.current.batmanY
+  }, [])
 
   // 订阅移动队列变化（新路径 → 重置透明度）
   useEffect(() => {
@@ -61,7 +88,34 @@ export function SceneController() {
     const selType = useSceneStore.getState().selectedType
     const queue = moveQueueRef.current
 
-    // 移动逻辑
+    // ---- 入场动画 ----
+    const ent = entranceRef.current
+    if (!ent.done) {
+      const elapsed = performance.now() - ent.startTime
+      const duration = 1500 // 1.5s
+      const progress = Math.min(elapsed / duration, 1)
+      const eased = easeOutCubic(progress)
+
+      const soldier = modelRegistry.soldier
+      const queen = modelRegistry.queen
+      const batman = modelRegistry.batman
+
+      if (soldier) soldier.position.y = -2 + 2 * eased
+      if (queen) queen.position.y = -2 + 2 * eased
+      if (batman) batman.position.y = (-2 + 0.7) + 2 * eased
+
+      if (progress >= 1) {
+        ent.done = true
+        // 精确保留最终位置（消除浮点误差）
+        if (soldier) soldier.position.y = 0
+        if (queen) queen.position.y = 0
+        if (batman) batman.position.y = 0.7
+      }
+      // 入场期间跳过移动逻辑
+      return
+    }
+
+    // ---- 移动逻辑 ----
     if (selModel && queue.length > 0) {
       const target = queue[0]
       const dx = target.x - selModel.position.x
